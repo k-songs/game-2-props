@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rive 동적 렌더링 - 메인 페이지</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-animation {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .rive-canvas {
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            display: block;
+            margin: 0 auto 20px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            min-width: 120px;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .status {
+            font-size: 18px;
+            font-weight: 600;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .animation-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .select-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+        
+        .select-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .select-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            font-weight: bold;
+        }
+        
+        .info-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .info-box h3 {
+            margin-top: 0;
+            color: #FFD700;
+        }
+        
+        .info-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .info-box li {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .rive-canvas {
+                height: 300px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Rive 동적 렌더링</h1>
+            <p>실시간 애니메이션을 직접 체험해보세요!</p>
+        </div>
+        
+        <div class="main-animation">
+            <div class="animation-selector">
+                <button class="select-btn active" onclick="changeAnimation('vehicles')">🚗 차량</button>
+                <button class="select-btn" onclick="changeAnimation('avatar')">👤 아바타</button>
+                <button class="select-btn" onclick="changeAnimation('loading')">⏳ 로딩</button>
+                <button class="select-btn" onclick="changeAnimation('button')">❤️ 버튼</button>
+                <button class="select-btn" onclick="changeAnimation('marvin')">🤖 마빈</button>
+                <button class="select-btn" onclick="changeAnimation('local')">🗂️ 로컬</button>
+            </div>
+            
+            <canvas id="main-canvas" class="rive-canvas"></canvas>
+            
+            <div class="controls">
+                <button class="btn" onclick="controlAnimation('play')">▶️ 재생</button>
+                <button class="btn" onclick="controlAnimation('pause')">⏸️ 일시정지</button>
+                <button class="btn" onclick="controlAnimation('reset')">🔄 리셋</button>
+                <button class="btn" onclick="downloadFrame()">📷 스크린샷</button>
+            </div>
+            
+            <div id="status" class="status">초기화 중...</div>
+        </div>
+        
+        <div class="info-box">
+            <h3>🎯 주요 기능</h3>
+            <ul>
+                <li><strong>동적 렌더링:</strong> 실시간 Rive 애니메이션 재생</li>
+                <li><strong>다중 애니메이션:</strong> 6가지 서로 다른 애니메이션 타입</li>
+                <li><strong>인터랙티브 컨트롤:</strong> 재생/일시정지/리셋 가능</li>
+                <li><strong>스크린샷 기능:</strong> 현재 프레임을 이미지로 저장</li>
+                <li><strong>로컬 애셋 지원:</strong> 프로젝트 내 Rive 파일 로드</li>
+                <li><strong>폴백 시스템:</strong> 로드 실패 시 Canvas 애니메이션 표시</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let currentRiveInstance = null;
+        let currentAnimationType = 'vehicles';
+        let fallbackAnimationId = null;
+        
+        // Rive 라이브러리 로드
+        function loadRiveLibrary() {
+            return new Promise((resolve, reject) => {
+                if (window.rive) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@rive-app/canvas@2.17.3/rive.js';
+                script.onload = () => {
+                    console.log('✅ Rive 라이브러리 로드 완료');
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error('❌ Rive 라이브러리 로드 실패');
+                    reject();
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 애니메이션 URL 가져오기
+        function getAnimationUrl(type) {
+            const urls = {
+                'vehicles': 'https://cdn.rive.app/animations/vehicles.riv',
+                'avatar': 'https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv',
+                'loading': 'https://cdn.rive.app/animations/juice_v7.riv',
+                'button': 'https://cdn.rive.app/animations/like_button_demo.riv',
+                'local': './assets/vehicles.riv',
+                'marvin': 'https://cdn.rive.app/animations/marvin.riv'
+            };
+            return urls[type] || urls.vehicles;
+        }
+        
+        // 애니메이션 변경
+        async function changeAnimation(type) {
+            currentAnimationType = type;
+            
+            // 활성 버튼 표시 업데이트
+            document.querySelectorAll('.select-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 기존 애니메이션 정리
+            if (currentRiveInstance) {
+                currentRiveInstance.cleanup();
+                currentRiveInstance = null;
+            }
+            
+            if (fallbackAnimationId) {
+                cancelAnimationFrame(fallbackAnimationId);
+                fallbackAnimationId = null;
+            }
+            
+            await initAnimation(type);
+        }
+        
+        // 애니메이션 초기화
+        async function initAnimation(type) {
+            try {
+                const canvas = document.getElementById('main-canvas');
+                const status = document.getElementById('status');
+                
+                if (!canvas || !window.rive) return;
+                
+                status.textContent = `${type} 애니메이션 로딩 중...`;
+                status.style.background = 'rgba(255, 193, 7, 0.2)';
+                
+                const { Rive, Layout, Fit, Alignment } = window.rive;
+                const animationUrl = getAnimationUrl(type);
+                
+                console.log(`🎬 ${type} 애니메이션 초기화:`, animationUrl);
+                
+                const riveInstance = new Rive({
+                    src: animationUrl,
+                    canvas: canvas,
+                    autoplay: true,
+                    layout: new Layout({
+                        fit: Fit.Cover,
+                        alignment: Alignment.Center
+                    }),
+                    onLoad: () => {
+                        console.log(`✅ ${type} 애니메이션 로드 완료`);
+                        status.textContent = `${type} 애니메이션 재생 중 ▶️`;
+                        status.style.background = 'rgba(40, 167, 69, 0.2)';
+                        currentRiveInstance = riveInstance;
+                    },
+                    onLoadError: (error) => {
+                        console.error(`❌ ${type} 애니메이션 로드 실패:`, error);
+                        status.textContent = `${type} 로드 실패 - 폴백 애니메이션 표시 중`;
+                        status.style.background = 'rgba(220, 53, 69, 0.2)';
+                        showFallbackAnimation(canvas, type);
+                    },
+                    onPlay: () => {
+                        status.textContent = `${type} 재생 중 ▶️`;
+                        status.style.background = 'rgba(40, 167, 69, 0.2)';
+                    },
+                    onPause: () => {
+                        status.textContent = `${type} 일시정지 ⏸️`;
+                        status.style.background = 'rgba(255, 193, 7, 0.2)';
+                    },
+                    onStop: () => {
+                        status.textContent = `${type} 정지 ⏹️`;
+                        status.style.background = 'rgba(108, 117, 125, 0.2)';
+                    }
+                });
+                
+            } catch (error) {
+                console.error(`❌ ${type} 초기화 오류:`, error);
+                document.getElementById('status').textContent = `${type} 초기화 실패`;
+                document.getElementById('status').style.background = 'rgba(220, 53, 69, 0.2)';
+            }
+        }
+        
+        // 폴백 애니메이션
+        function showFallbackAnimation(canvas, type) {
+            const ctx = canvas.getContext('2d');
+            let angle = 0;
+            
+            const animate = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 배경 그라데이션
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                // 타입별 애니메이션
+                drawAnimationByType(ctx, centerX, centerY, angle, type);
+                
+                angle += 0.05;
+                fallbackAnimationId = requestAnimationFrame(animate);
+            };
+            
+            animate();
+        }
+        
+        // 타입별 애니메이션 그리기
+        function drawAnimationByType(ctx, centerX, centerY, angle, type) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '64px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const icons = {
+                'vehicles': '🚗',
+                'avatar': '👤',
+                'loading': '⏳',
+                'button': '❤️',
+                'marvin': '🤖',
+                'local': '🗂️'
+            };
+            
+            const scale = 1 + Math.sin(angle * 2) * 0.15;
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(scale, scale);
+            ctx.fillText(icons[type] || '🎭', 0, 0);
+            ctx.restore();
+            
+            // 회전하는 원
+            const radius = 80 + Math.sin(angle * 3) * 20;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // 파티클 효과
+            for (let i = 0; i < 8; i++) {
+                const particleAngle = angle + i * (Math.PI * 2 / 8);
+                const distance = 120 + Math.sin(angle * 2 + i) * 30;
+                const x = centerX + Math.cos(particleAngle) * distance;
+                const y = centerY + Math.sin(particleAngle) * distance;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${(angle * 180 / Math.PI + i * 45) % 360}, 70%, 70%)`;
+                ctx.fill();
+            }
+        }
+        
+        // 애니메이션 제어
+        function controlAnimation(action) {
+            if (!currentRiveInstance) {
+                console.log('활성 애니메이션 인스턴스가 없습니다.');
+                return;
+            }
+            
+            try {
+                switch(action) {
+                    case 'play':
+                        currentRiveInstance.play();
+                        break;
+                    case 'pause':
+                        currentRiveInstance.pause();
+                        break;
+                    case 'reset':
+                        currentRiveInstance.reset();
+                        break;
+                }
+            } catch (error) {
+                console.error('애니메이션 제어 오류:', error);
+            }
+        }
+        
+        // 스크린샷 다운로드
+        function downloadFrame() {
+            const canvas = document.getElementById('main-canvas');
+            const link = document.createElement('a');
+            link.download = `rive-${currentAnimationType}-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // 초기화
+        async function init() {
+            try {
+                const status = document.getElementById('status');
+                status.textContent = 'Rive 라이브러리 로딩 중...';
+                
+                await loadRiveLibrary();
+                await initAnimation(currentAnimationType);
+                
+                console.log('🎉 초기화 완료!');
+                
+            } catch (error) {
+                console.error('❌ 초기화 오류:', error);
+                document.getElementById('status').textContent = '초기화 실패';
+                document.getElementById('status').style.background = 'rgba(220, 53, 69, 0.2)';
+            }
+        }
+        
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
+
+
+
+
+<!--  const Slot =({name,children}) =>{
+const {setSlots} = useContext(SlotContext)
+useEffect(())=>{
+    setSlots((prev)=>({...prev,[name]:children}))
+,[children]}
+return null
+}               -->

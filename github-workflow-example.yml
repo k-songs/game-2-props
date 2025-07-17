@@ -1,0 +1,80 @@
+name: Add issues to project board
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 본인의 프로젝트 URL로 변경 필요
+      - name: Add issue to project
+        uses: actions/add-to-project@v0.5.0
+        with:
+          # 🔧 여기를 본인의 프로젝트 URL로 변경하세요
+          project-url: https://github.com/users/YOUR_USERNAME/projects/YOUR_PROJECT_NUMBER
+          # 또는 조직 프로젝트의 경우:
+          # project-url: https://github.com/orgs/YOUR_ORG/projects/YOUR_PROJECT_NUMBER
+          
+          # 🔐 GitHub 토큰 설정
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # 또는 커스텀 토큰 사용:
+          # github-token: ${{ secrets.PROJECT_TOKEN }}
+
+      # 2. 라벨 추가 (선택사항)
+      - name: Add triage label
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["triage"]
+            })
+
+---
+
+# 🔧 설정 가이드
+
+## 1. 프로젝트 URL 찾기
+1. GitHub에서 본인의 프로젝트로 이동
+2. URL을 복사: `https://github.com/users/YOUR_USERNAME/projects/NUMBER`
+3. 위 코드의 `project-url`에 붙여넣기
+
+## 2. 토큰 설정
+### 기본 토큰 사용 (권장)
+```yaml
+github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### 커스텀 토큰 사용
+1. GitHub Settings → Developer settings → Personal access tokens
+2. 새 토큰 생성 (project 권한 포함)
+3. 리포지토리 Settings → Secrets → Actions
+4. 새 시크릿 `PROJECT_TOKEN` 추가
+5. 워크플로우에서 `${{ secrets.PROJECT_TOKEN }}` 사용
+
+## 3. 필요한 권한
+- `project` (프로젝트 관리)
+- `issues` (이슈 관리)
+- `repo` (리포지토리 접근)
+
+## 4. 테스트 방법
+1. 워크플로우 파일을 `.github/workflows/` 디렉터리에 저장
+2. 새 이슈 생성
+3. Actions 탭에서 워크플로우 실행 확인
+
+## 5. 문제 해결
+### 404 에러가 계속 발생하는 경우:
+- 프로젝트 URL이 올바른지 확인
+- 토큰 권한이 충분한지 확인
+- 프로젝트가 공개되어 있는지 확인
+
+### 403 에러가 발생하는 경우:
+- 토큰 권한 부족
+- 프로젝트 접근 권한 없음 

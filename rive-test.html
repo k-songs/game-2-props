@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rive 동적 이미지 렌더링 테스트</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .animation-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .animation-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .rive-canvas {
+            width: 100%;
+            height: 200px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            display: block;
+            margin: 0 auto;
+        }
+        .controls {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        .status {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Rive 동적 이미지 렌더링 테스트</h1>
+            <p>다양한 Rive 애니메이션을 실시간으로 확인해보세요!</p>
+        </div>
+
+        <div class="grid">
+            <!-- 차량 애니메이션 -->
+            <div class="animation-card">
+                <div class="animation-title">🚗 차량 애니메이션</div>
+                <canvas id="vehicles-canvas" class="rive-canvas"></canvas>
+                <div class="controls">
+                    <button class="btn" onclick="controlAnimation('vehicles', 'play')">▶️ 재생</button>
+                    <button class="btn" onclick="controlAnimation('vehicles', 'pause')">⏸️ 정지</button>
+                    <button class="btn" onclick="controlAnimation('vehicles', 'reset')">🔄 리셋</button>
+                </div>
+                <div id="vehicles-status" class="status">로딩 중...</div>
+            </div>
+
+            <!-- 아바타 애니메이션 -->
+            <div class="animation-card">
+                <div class="animation-title">👤 아바타 애니메이션</div>
+                <canvas id="avatar-canvas" class="rive-canvas"></canvas>
+                <div class="controls">
+                    <button class="btn" onclick="controlAnimation('avatar', 'play')">▶️ 재생</button>
+                    <button class="btn" onclick="controlAnimation('avatar', 'pause')">⏸️ 정지</button>
+                    <button class="btn" onclick="controlAnimation('avatar', 'reset')">🔄 리셋</button>
+                </div>
+                <div id="avatar-status" class="status">로딩 중...</div>
+            </div>
+
+            <!-- 로딩 애니메이션 -->
+            <div class="animation-card">
+                <div class="animation-title">⏳ 로딩 애니메이션</div>
+                <canvas id="loading-canvas" class="rive-canvas"></canvas>
+                <div class="controls">
+                    <button class="btn" onclick="controlAnimation('loading', 'play')">▶️ 재생</button>
+                    <button class="btn" onclick="controlAnimation('loading', 'pause')">⏸️ 정지</button>
+                    <button class="btn" onclick="controlAnimation('loading', 'reset')">🔄 리셋</button>
+                </div>
+                <div id="loading-status" class="status">로딩 중...</div>
+            </div>
+
+            <!-- 버튼 애니메이션 -->
+            <div class="animation-card">
+                <div class="animation-title">❤️ 버튼 애니메이션</div>
+                <canvas id="button-canvas" class="rive-canvas"></canvas>
+                <div class="controls">
+                    <button class="btn" onclick="controlAnimation('button', 'play')">▶️ 재생</button>
+                    <button class="btn" onclick="controlAnimation('button', 'pause')">⏸️ 정지</button>
+                    <button class="btn" onclick="controlAnimation('button', 'reset')">🔄 리셋</button>
+                </div>
+                <div id="button-status" class="status">로딩 중...</div>
+            </div>
+
+            <!-- 로컬 애셋 애니메이션 -->
+            <div class="animation-card">
+                <div class="animation-title">🗂️ 로컬 애셋</div>
+                <canvas id="local-canvas" class="rive-canvas"></canvas>
+                <div class="controls">
+                    <button class="btn" onclick="controlAnimation('local', 'play')">▶️ 재생</button>
+                    <button class="btn" onclick="controlAnimation('local', 'pause')">⏸️ 정지</button>
+                    <button class="btn" onclick="controlAnimation('local', 'reset')">🔄 리셋</button>
+                </div>
+                <div id="local-status" class="status">로딩 중...</div>
+            </div>
+
+            <!-- 마빈 캐릭터 애니메이션 -->
+            <div class="animation-card">
+                <div class="animation-title">🤖 마빈 캐릭터</div>
+                <canvas id="marvin-canvas" class="rive-canvas"></canvas>
+                <div class="controls">
+                    <button class="btn" onclick="controlAnimation('marvin', 'play')">▶️ 재생</button>
+                    <button class="btn" onclick="controlAnimation('marvin', 'pause')">⏸️ 정지</button>
+                    <button class="btn" onclick="controlAnimation('marvin', 'reset')">🔄 리셋</button>
+                </div>
+                <div id="marvin-status" class="status">로딩 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Rive 애니메이션 인스턴스들 저장
+        const riveInstances = {};
+        
+        // Rive 라이브러리 로드
+        function loadRiveLibrary() {
+            return new Promise((resolve, reject) => {
+                if (window.rive) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@rive-app/canvas@2.17.3/rive.js';
+                script.onload = () => {
+                    console.log('✅ Rive 라이브러리 로드 완료');
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error('❌ Rive 라이브러리 로드 실패');
+                    reject();
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        // 애니메이션 URL 가져오기
+        function getAnimationUrl(type) {
+            const urls = {
+                'vehicles': 'https://cdn.rive.app/animations/vehicles.riv',
+                'avatar': 'https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv',
+                'loading': 'https://cdn.rive.app/animations/juice_v7.riv',
+                'button': 'https://cdn.rive.app/animations/like_button_demo.riv',
+                'local': './assets/vehicles.riv',
+                'marvin': 'https://cdn.rive.app/animations/marvin.riv'
+            };
+            return urls[type] || urls.vehicles;
+        }
+
+        // 애니메이션 초기화
+        async function initAnimation(type) {
+            try {
+                const canvas = document.getElementById(`${type}-canvas`);
+                const status = document.getElementById(`${type}-status`);
+                
+                if (!canvas || !window.rive) return;
+
+                status.textContent = '로딩 중...';
+                
+                const { Rive, Layout, Fit, Alignment } = window.rive;
+                const animationUrl = getAnimationUrl(type);
+                
+                console.log(`🎬 ${type} 애니메이션 초기화 시작:`, animationUrl);
+                
+                const riveInstance = new Rive({
+                    src: animationUrl,
+                    canvas: canvas,
+                    autoplay: true,
+                    layout: new Layout({
+                        fit: Fit.Cover,
+                        alignment: Alignment.Center
+                    }),
+                    onLoad: () => {
+                        console.log(`✅ ${type} 애니메이션 로드 완료`);
+                        status.textContent = '재생 중 ▶️';
+                        riveInstances[type] = riveInstance;
+                    },
+                    onLoadError: (error) => {
+                        console.error(`❌ ${type} 애니메이션 로드 실패:`, error);
+                        status.textContent = '로드 실패 ❌';
+                        // 실패 시 폴백 애니메이션 표시
+                        showFallbackAnimation(canvas, type);
+                    },
+                    onPlay: () => {
+                        console.log(`▶️ ${type} 재생 시작`);
+                        status.textContent = '재생 중 ▶️';
+                    },
+                    onPause: () => {
+                        console.log(`⏸️ ${type} 일시정지`);
+                        status.textContent = '일시정지 ⏸️';
+                    },
+                    onStop: () => {
+                        console.log(`⏹️ ${type} 정지`);
+                        status.textContent = '정지 ⏹️';
+                    }
+                });
+
+            } catch (error) {
+                console.error(`❌ ${type} 초기화 오류:`, error);
+                document.getElementById(`${type}-status`).textContent = '오류 발생 ❌';
+            }
+        }
+
+        // 폴백 애니메이션 (Rive 파일 로드 실패 시)
+        function showFallbackAnimation(canvas, type) {
+            const ctx = canvas.getContext('2d');
+            let angle = 0;
+            
+            const animate = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 배경 그라데이션
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                // 타입별 폴백 애니메이션
+                switch(type) {
+                    case 'vehicles':
+                        drawVehicleAnimation(ctx, centerX, centerY, angle);
+                        break;
+                    case 'avatar':
+                        drawAvatarAnimation(ctx, centerX, centerY, angle);
+                        break;
+                    case 'loading':
+                        drawLoadingAnimation(ctx, centerX, centerY, angle);
+                        break;
+                    case 'button':
+                        drawButtonAnimation(ctx, centerX, centerY, angle);
+                        break;
+                    case 'local':
+                        drawLocalAnimation(ctx, centerX, centerY, angle);
+                        break;
+                    case 'marvin':
+                        drawMarvinAnimation(ctx, centerX, centerY, angle);
+                        break;
+                    default:
+                        drawDefaultAnimation(ctx, centerX, centerY, angle);
+                }
+                
+                angle += 0.05;
+                requestAnimationFrame(animate);
+            };
+            
+            animate();
+        }
+
+        // 각 타입별 폴백 애니메이션 함수들
+        function drawVehicleAnimation(ctx, centerX, centerY, angle) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const carScale = 1 + Math.sin(angle * 2) * 0.1;
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(carScale, carScale);
+            ctx.fillText('🚗', 0, 0);
+            ctx.restore();
+            
+            // 움직이는 바퀴 효과
+            for (let i = 0; i < 4; i++) {
+                const wheelAngle = angle * 3 + i * (Math.PI / 2);
+                const radius = 60;
+                const x = centerX + Math.cos(wheelAngle) * radius;
+                const y = centerY + Math.sin(wheelAngle) * radius;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#FFD700';
+                ctx.fill();
+            }
+        }
+
+        function drawAvatarAnimation(ctx, centerX, centerY, angle) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const avatarScale = 1 + Math.sin(angle * 2) * 0.1;
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(avatarScale, avatarScale);
+            ctx.fillText('👤', 0, 0);
+            ctx.restore();
+            
+            // 펄스 효과
+            const pulseRadius = 40 + Math.sin(angle * 3) * 20;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#00BCD4';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawLoadingAnimation(ctx, centerX, centerY, angle) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('⏳', centerX, centerY);
+            
+            // 회전하는 로딩 바
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 60, 0, angle * 2);
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+
+        function drawButtonAnimation(ctx, centerX, centerY, angle) {
+            const heartScale = 1 + Math.sin(angle * 6) * 0.2;
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(heartScale, heartScale);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('❤️', 0, 0);
+            ctx.restore();
+            
+            // 파동 효과
+            const rippleRadius = (Math.sin(angle * 2) + 1) * 30;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#E91E63';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawLocalAnimation(ctx, centerX, centerY, angle) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🗂️', centerX, centerY);
+            
+            // 회전하는 테두리
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 70, angle, angle + Math.PI);
+            ctx.strokeStyle = '#FF9800';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        function drawMarvinAnimation(ctx, centerX, centerY, angle) {
+            const robotScale = 1 + Math.sin(angle * 2) * 0.1;
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(robotScale, robotScale);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🤖', 0, 0);
+            ctx.restore();
+            
+            // 파티클 효과
+            for (let i = 0; i < 12; i++) {
+                const particleAngle = angle + i * (Math.PI * 2 / 12);
+                const distance = 50 + Math.sin(angle * 3 + i) * 15;
+                const x = centerX + Math.cos(particleAngle) * distance;
+                const y = centerY + Math.sin(particleAngle) * distance;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = '#64B5F6';
+                ctx.fill();
+            }
+        }
+
+        function drawDefaultAnimation(ctx, centerX, centerY, angle) {
+            for (let i = 0; i < 8; i++) {
+                const x = centerX + Math.cos(angle + i * Math.PI / 4) * 50;
+                const y = centerY + Math.sin(angle + i * Math.PI / 4) * 50;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 12, 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${(angle * 180 / Math.PI + i * 45) % 360}, 70%, 60%)`;
+                ctx.fill();
+            }
+        }
+
+        // 애니메이션 제어 함수
+        function controlAnimation(type, action) {
+            const instance = riveInstances[type];
+            const status = document.getElementById(`${type}-status`);
+            
+            if (!instance) {
+                console.log(`${type} 인스턴스가 없습니다.`);
+                return;
+            }
+            
+            try {
+                switch(action) {
+                    case 'play':
+                        instance.play();
+                        status.textContent = '재생 중 ▶️';
+                        break;
+                    case 'pause':
+                        instance.pause();
+                        status.textContent = '일시정지 ⏸️';
+                        break;
+                    case 'reset':
+                        instance.reset();
+                        status.textContent = '리셋 완료 🔄';
+                        break;
+                }
+            } catch (error) {
+                console.error(`${type} 제어 오류:`, error);
+            }
+        }
+
+        // 초기화
+        async function init() {
+            try {
+                await loadRiveLibrary();
+                
+                // 모든 애니메이션 타입 초기화
+                const types = ['vehicles', 'avatar', 'loading', 'button', 'local', 'marvin'];
+                
+                for (const type of types) {
+                    await initAnimation(type);
+                    // 각 애니메이션 사이에 약간의 지연 추가
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                console.log('🎉 모든 애니메이션 초기화 완료!');
+                
+            } catch (error) {
+                console.error('❌ 초기화 오류:', error);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html> 
